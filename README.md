@@ -1,101 +1,104 @@
-# RAG Demo 使用说明
+# RAG Demo
 
-## 简介
+English | [简体中文(Simplified Chinese)](https://github.com/puyuan1996/RAG/blob/main/README_zh.md) 
 
-RAG 是一个基于检索增强生成 (RAG) 的问答系统示例项目。它使用大型语言模型（如 GPT-3.5）和文档检索向量数据库（如 Weaviate）来响应用户的问题，通过检索相关的文档上下文以及利用语言模型的生成能力来提供准确的回答。
-同时提供了一个基于 Gradio 和 rag_demo_v2.py 构建的网页交互式应用。
+## Introduction
 
-## rag_demo.py 功能
+RAG is a demonstration project for a question-answering system based on Retrieval-Augmented Generation (RAG). 
+- It utilizes large language models such as GPT-3.5 in conjunction with a document retrieval vector database like Weaviate to respond to user queries by retrieving relevant document contexts and leveraging the generative capabilities of the language model.
+- The project also includes a web-based interactive application built with Gradio and rag_demo.py.
 
-- 支持通过环境变量加载 OpenAI API 密钥。
-- 支持加载本地文档并将其分割成小块。
-- 支持创建向量存储，并将文档块转换为向量存储在 Weaviate 中。
-- 支持设置检索增强生成流程，结合文档检索和语言模型生成对用户问题进行回答。
-- 支持执行查询并打印结果，可以选择是否通过 RAG 流程。
+## rag_demo.py Features
 
-## app.py 功能
+- Supports loading OpenAI API keys via environment variables.
+- Facilitates loading local documents and splitting them into chunks.
+- Allows for the creation of a vector store and the conversion of document chunks into vectors for storage in Weaviate.
+- Sets up a Retrieval-Augmented Generation process, combining document retrieval and language model generation to answer user questions.
+- Executes queries and prints results, with the option to use the RAG process or not.
 
-- 创建一个Gradio应用，用户可以在其中输入问题，应用会使用Retrieval-Augmented Generation (RAG)模型来寻找答案并将结果显示在界面上。
-- 其中，检索到的上下文会在Markdown文档中高亮显示，帮助用户理解答案的来源。应用界面分为两部分：顶部是问答区，底部展示了RAG模型参考的上下文。
+## app.py Features
 
-## 使用方法
+- Creates a Gradio application where users can input questions and the application employs the Retrieval-Augmented Generation (RAG) model to find answers, displaying results within the interface.
+- Retrieved contexts are highlighted in the Markdown document to help users understand the source of the answers. The application interface is divided into two sections: the top for Q&A and the bottom to display the contexts referred to by the RAG model.
 
-1. 克隆项目到本地。
-2. 安装依赖。
+## How to Use
+
+1. Clone the project to your local machine.
+2. Install dependencies.
 
 ```shell
 pip3 install -r requirements.txt
 ```
-3. 在项目根目录下创建 `.env` 文件，并添加你的 OpenAI API 密钥：
+3. Create a `.env` file in the project root directory and add your OpenAI API key:
 
 ```
-OPENAI_API_KEY='你的API密钥'
-QUESTION_LANG='cn' # 问题语言，目前可选值为 'cn'
+OPENAI_API_KEY='your API key'
+QUESTION_LANG='cn' # The language of the question, currently available option is 'cn'
 ```
 
-4. 确保已经有可用的文档作为上下文，或者使用注释掉的代码段下载你需要参考的文档。
-5. 执行 `python3 -u rag_demo.py` 文件即可开始使用。
+4. Ensure you have available documents as context or use the commented-out code snippet to download the documents you want to reference.
+5. Run the `python3 -u rag_demo.py` file to start using the application.
 
-## 示例
+## Example
 
 ```python
 
-# rag_demo.py 相对 rag_demo_v0.py 的不同之处在于可以输出检索到的文档块。
+# The difference between rag_demo.py and rag_demo_v0.py is that it can output the retrieved document chunks.
 if __name__ == "__main__":
-    # 假设文档已存在于本地
+    # Assuming documents are already present locally
     file_path = './documents/LightZero_README.zh.md'
-    # 加载和分割文档
+    # Load and split document
     chunks = load_and_split_document(file_path)
-    # 创建向量存储
+    # Create vector store
     retriever = create_vector_store(chunks)
-    # 设置 RAG 流程
+    # Set up RAG process
     rag_chain = setup_rag_chain()
     
-    # 提出问题并获取答案
-    query = "请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 环境上运行吗？请详细解释原因"
-    # 使用 RAG 链获取参考的文档与答案
+    # Pose a question and get an answer
+    query = "Does the AlphaZero algorithm implemented in LightZero support running in the Atari environment? Please explain in detail."
+    # Use RAG chain to get referenced documents and answer
     retrieved_documents, result_with_rag = execute_query(retriever, rag_chain, query)
-    # 不使用 RAG 链获取答案
+    # Get an answer without using RAG chain
     result_without_rag = execute_query_no_rag(query=query)
     
-    # 此处省略部分数据处理代码，具体细节请参考本仓库中的源文件
+    # Details of data handling code are omitted here, please refer to the source files in this repository for specifics
     
-    # 打印并对比两种方法的结果
+    # Print and compare results from both methods
     print("=" * 40)
-    print(f"我的问题是:\n{query}")
+    print(f"My question is:\n{query}")
     print("=" * 40)
-    print(f"Result with RAG:\n{wrapped_result_with_rag}\n检索得到的context是: \n{context}")
+    print(f"Result with RAG:\n{wrapped_result_with_rag}\nRetrieved context is: \n{context}")
     print("=" * 40)
     print(f"Result without RAG:\n{wrapped_result_without_rag}")
     print("=" * 40)
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 RAG/
 │
-├── rag_demo_v0.py         # RAG 演示脚本，不支持输出检索到的文档块。
-├── rag_demo.py            # RAG 演示脚本，支持输出检索到的文档块。
-├── app.py                 # 基于 Gradio 和 rag_demo.py 构建的网页交互式应用。
-├── .env                   # 环境变量配置文件
-└── documents/             # 文档文件夹
-    └── your_document.txt  # 上下文文档
+├── rag_demo_v0.py         # RAG demonstration script without support for outputting retrieved document chunks.
+├── rag_demo.py            # RAG demonstration script with support for outputting retrieved document chunks.
+├── app.py                 # Web-based interactive application built with Gradio and rag_demo.py.
+├── .env                   # Environment variable configuration file
+└── documents/             # Documents folder
+    └── your_document.txt  # Context document
 ```
 
-## 贡献指南
+## Contribution Guide
 
-如果您希望为 RAG 贡献代码，请遵循以下步骤：
+If you would like to contribute code to RAG, please follow these steps:
 
-1. Fork 项目。
-2. 创建一个新的分支。
-3. 提交你的改动。
-4. 提交 Pull Request。
+1. Fork the project.
+2. Create a new branch.
+3. Commit your changes.
+4. Submit a Pull Request.
 
-## 问题和支持
+## Issues and Support
 
-如果遇到任何问题或需要帮助，请通过项目的 Issues 页面提交问题。
+If you encounter any issues or require assistance, please submit a problem through the project's Issues page.
 
-## 许可证
+## License
 
-本仓库中的所有代码都符合 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)。
+All code in this repository is compliant with [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
