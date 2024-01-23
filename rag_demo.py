@@ -51,11 +51,11 @@ def create_vector_store(chunks, model="OpenAI"):
 
 
 # 定义检索增强生成流程
-def setup_rag_chain(retriever, model_name="gpt-4", temperature=0):
+def setup_rag_chain_v2(model_name="gpt-4", temperature=0):
     """设置检索增强生成流程"""
     prompt_template = """You are an assistant for question-answering tasks. 
     Use your knowledge to answer the question if the provided context is not relevant. 
-    Otherwise, use the context to inform your answer.
+    Otherwise, use the context to inform your answer. 
     Question: {question} 
     Context: {context} 
     Answer:
@@ -64,8 +64,7 @@ def setup_rag_chain(retriever, model_name="gpt-4", temperature=0):
     llm = ChatOpenAI(model_name=model_name, temperature=temperature)
     # 创建 RAG 链，参考 https://python.langchain.com/docs/expression_language/
     rag_chain = (
-            {"context": retriever, "question": RunnablePassthrough()}
-            | prompt
+            prompt
             | llm
             | StrOutputParser()
     )
@@ -73,9 +72,11 @@ def setup_rag_chain(retriever, model_name="gpt-4", temperature=0):
 
 
 # 执行查询并打印结果
-def execute_query(rag_chain, query):
-    """执行查询并返回结果"""
-    return rag_chain.invoke(query)
+def execute_query_v2(retriever, rag_chain, query):
+    """执行查询并返回结果及检索到的文档块"""
+    retrieved_documents = retriever.invoke(query)
+    rag_chain_response = rag_chain.invoke({"context": retrieved_documents, "question": query})
+    return retrieved_documents, rag_chain_response
 
 
 # 执行无 RAG 链的查询
@@ -86,16 +87,9 @@ def execute_query_no_rag(model_name="gpt-4", temperature=0, query=""):
     return response.content
 
 
-# 主程序
+# rag_demo_v2.py 相对 rag_demo.py 的不同之处在于可以输出检索到的文档块。
 if __name__ == "__main__":
-    # 下载并保存文档到本地（这里被注释掉了，因为已经假设文档存在于本地）
-    # url = "https://raw.githubusercontent.com/langchain-ai/langchain/master/docs/docs/modules/state_of_the_union.txt"
-    # res = requests.get(url)
-    # with open("state_of_the_union.txt", "w") as f:
-    #     f.write(res.text)
-
     # 假设文档已存在于本地
-    # file_path = './documents/state_of_the_union.txt'
     file_path = './documents/LightZero_README.zh.md'
 
     # 加载和分割文档
@@ -105,19 +99,14 @@ if __name__ == "__main__":
     retriever = create_vector_store(chunks)
 
     # 设置 RAG 流程
-    rag_chain = setup_rag_chain(retriever)
+    rag_chain = setup_rag_chain_v2()
 
     # 提出问题并获取答案
-    # query = "请你分别用中英文简介 LightZero"
-    # query = "请你用英文简介 LightZero"
-    query = "请你用中文简介 LightZero"
-    # query = "请问 LightZero 支持哪些环境和算法，应该如何快速上手使用？"
-    # query = "请问 LightZero 里面实现的 MuZero 算法支持在 Atari 环境上运行吗？"
-    # query = "请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 环境上运行吗？请详细解释原因"
+    query = "请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 环境上运行吗？请详细解释原因"
     # query = "请详细解释 MCTS 算法的原理，并给出带有详细中文注释的 Python 代码示例"
 
-    # 使用 RAG 链获取答案
-    result_with_rag = execute_query(rag_chain, query)
+    # 使用 RAG 链获取参考的文档与答案
+    retrieved_documents, result_with_rag = execute_query_v2(retriever, rag_chain, query)
 
     # 不使用 RAG 链获取答案
     result_without_rag = execute_query_no_rag(query=query)
@@ -126,11 +115,14 @@ if __name__ == "__main__":
     # 使用textwrap.fill来自动分段文本，width参数可以根据你的屏幕宽度进行调整
     wrapped_result_with_rag = textwrap.fill(result_with_rag, width=80)
     wrapped_result_without_rag = textwrap.fill(result_without_rag, width=80)
+    context = '\n'.join(
+        [f'**Document {i}**: ' + retrieved_documents[i].page_content for i in range(len(retrieved_documents))])
 
     # 打印自动分段后的文本
-    print("="*40)
+    print("=" * 40)
     print(f"我的问题是:\n{query}")
-    print("="*40)
-    print(f"Result with RAG:\n{wrapped_result_with_rag}")
-    print("="*40)
+    print("=" * 40)
+    print(f"Result with RAG:\n{wrapped_result_with_rag}\n检索得到的context是: \n{context}")
+    print("=" * 40)
     print(f"Result without RAG:\n{wrapped_result_without_rag}")
+    print("=" * 40)
