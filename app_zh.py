@@ -1,31 +1,31 @@
 """
-此代码的整体功能是构建一个Gradio界面，该界面允许用户输入问题，然后使用一个Retrieval-Augmented Generation (RAG)模型来找到并显示答案。
-同时，该界面通过高亮显示检索到的上下文来展示RAG模型如何找到答案。
-界面被分为两个部分：上吧边是问答区域，下边是原始Markdown文档，其中包含了RAG模型参考的上下文。
+这段代码的整体功能是创建一个Gradio应用，用户可以在其中输入问题，应用会使用Retrieval-Augmented Generation (RAG)模型来寻找答案并将结果显示在界面上。
+其中，检索到的上下文会在Markdown文档中高亮显示，帮助用户理解答案的来源。应用界面分为两部分：顶部是问答区，底部展示了RAG模型参考的上下文。
 
 结构概述：
-- 导入Gradio库和RAG相关的函数和类。
-- 加载并切分文档，设置检索器和RAG模型。
-- 定义了一个rag_answer函数，用于处理用户的问题，并返回模型的答案和高亮显示的上下文。
-- 使用Gradio的Interface构建用户界面，设置输入框和输出框的属性，并定义了CSS样式来改善界面外观。
-- 启动Gradio界面并设置为可以分享。
+- 导入必要的库和函数。
+- 设置环境变量和全局变量。
+- 加载和处理Markdown文档。
+- 定义处理用户问题并返回答案和高亮显示上下文的函数。
+- 使用Gradio构建用户界面，包括Markdown、输入框、按钮和输出框。
+- 启动Gradio应用并设置为可以分享。
 """
 
 import os
 
 import gradio as gr
+from dotenv import load_dotenv
 from langchain.document_loaders import TextLoader
 
 from rag_demo_v2 import load_and_split_document, create_vector_store, setup_rag_chain_v2, execute_query_v2
 
-_QUESTION_IDS = {}
-count = 0
-_LANG = os.environ.get('QUESTION_LANG', 'cn')
-_LANG = "cn"
-assert _LANG in ['cn', 'en'], _LANG
-_DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
+# 环境设置
+load_dotenv()  # 加载环境变量
+QUESTION_LANG = os.getenv("QUESTION_LANG")  # 从环境变量获取 QUESTION_LANG
 
-if _LANG == "cn":
+assert QUESTION_LANG in ['cn', 'en'], QUESTION_LANG
+
+if QUESTION_LANG == "cn":
     title = "LightZero RAG Demo"
     title_markdown = """
     <div align="center">
@@ -66,7 +66,12 @@ def rag_answer(question):
         highlighted_document = highlighted_document.replace(context[i], f"<mark>{context[i]}</mark>")
     return answer, highlighted_document
 
-
+"""
+在下面的代码中，gr.Blocks构建了Gradio的界面布局，gr.Textbox用于创建文本输入框，gr.Button创建了一个按钮，gr.Markdown则用于显示Markdown格式的内容。
+gr_submit.click是一个事件处理器，当用户点击提交按钮时，它会调用rag_answer函数，并将输入和输出的组件关联起来。
+代码中的rag_answer函数负责接收用户的问题，使用RAG模型检索和生成答案，并将检索到的文本段落在Markdown原文中高亮显示。
+该函数返回模型生成的答案和高亮显示上下文的Markdown文本。
+"""
 with gr.Blocks(title=title, theme='ParityError/Interstellar') as rag_demo:
     gr.Markdown(title_markdown)
 
@@ -81,7 +86,7 @@ with gr.Blocks(title=title, theme='ParityError/Interstellar') as rag_demo:
                                     label="回答 (A)")
     with gr.Row():
         # placeholder="当你点击提交按钮后，这里会显示参考的文档，其中检索得到的与问题最相关的 context 用高亮显示。"
-        outputs_context = gr.Markdown(label="参考的文档，检索得到的 context 用高亮显示")
+        outputs_context = gr.Markdown(label="参考的文档，检索得到的 context 用高亮显示 (C)")
 
     gr.Markdown(tos_markdown)
 

@@ -87,7 +87,7 @@ def execute_query_no_rag(model_name="gpt-4", temperature=0, query=""):
     return response.content
 
 
-# rag_demo_v2.py 相对 rag_demo.py 的不同之处在于可以输出检索到的文档块。
+# rag_demo.py 相对 rag_demo_v0.py 的不同之处在于可以输出检索到的文档块。
 if __name__ == "__main__":
     # 假设文档已存在于本地
     file_path = './documents/LightZero_README.zh.md'
