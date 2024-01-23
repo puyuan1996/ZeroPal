@@ -51,7 +51,7 @@ def create_vector_store(chunks, model="OpenAI"):
 
 
 # 定义检索增强生成流程
-def setup_rag_chain_v2(model_name="gpt-4", temperature=0):
+def setup_rag_chain(model_name="gpt-4", temperature=0):
     """设置检索增强生成流程"""
     prompt_template = """You are an assistant for question-answering tasks. 
     Use your knowledge to answer the question if the provided context is not relevant. 
@@ -72,7 +72,7 @@ def setup_rag_chain_v2(model_name="gpt-4", temperature=0):
 
 
 # 执行查询并打印结果
-def execute_query_v2(retriever, rag_chain, query):
+def execute_query(retriever, rag_chain, query):
     """执行查询并返回结果及检索到的文档块"""
     retrieved_documents = retriever.invoke(query)
     rag_chain_response = rag_chain.invoke({"context": retrieved_documents, "question": query})
@@ -99,14 +99,14 @@ if __name__ == "__main__":
     retriever = create_vector_store(chunks)
 
     # 设置 RAG 流程
-    rag_chain = setup_rag_chain_v2()
+    rag_chain = setup_rag_chain()
 
     # 提出问题并获取答案
     query = "请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 环境上运行吗？请详细解释原因"
     # query = "请详细解释 MCTS 算法的原理，并给出带有详细中文注释的 Python 代码示例"
 
     # 使用 RAG 链获取参考的文档与答案
-    retrieved_documents, result_with_rag = execute_query_v2(retriever, rag_chain, query)
+    retrieved_documents, result_with_rag = execute_query(retriever, rag_chain, query)
 
     # 不使用 RAG 链获取答案
     result_without_rag = execute_query_no_rag(query=query)

@@ -17,7 +17,7 @@ import gradio as gr
 from dotenv import load_dotenv
 from langchain.document_loaders import TextLoader
 
-from rag_demo_v2 import load_and_split_document, create_vector_store, setup_rag_chain_v2, execute_query_v2
+from rag_demo import load_and_split_document, create_vector_store, setup_rag_chain, execute_query
 
 # 环境设置
 load_dotenv()  # 加载环境变量
@@ -49,8 +49,8 @@ if QUESTION_LANG == "cn":
 file_path = './documents/LightZero_README.zh.md'
 chunks = load_and_split_document(file_path)
 retriever = create_vector_store(chunks)
-# rag_chain = setup_rag_chain_v2(model_name="gpt-4")
-rag_chain = setup_rag_chain_v2(model_name="gpt-3.5-turbo")
+# rag_chain = setup_rag_chain(model_name="gpt-4")
+rag_chain = setup_rag_chain(model_name="gpt-3.5-turbo")
 
 # 加载原始Markdown文档
 loader = TextLoader(file_path)
@@ -58,7 +58,7 @@ orig_documents = loader.load()
 
 
 def rag_answer(question):
-    retrieved_documents, answer = execute_query_v2(retriever, rag_chain, question)
+    retrieved_documents, answer = execute_query(retriever, rag_chain, question)
     # Highlight the context in the document
     context = [retrieved_documents[i].page_content for i in range(len(retrieved_documents))]
     highlighted_document = orig_documents[0].page_content
