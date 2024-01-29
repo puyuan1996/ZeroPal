@@ -53,12 +53,21 @@ def create_vector_store(chunks, model="OpenAI"):
 # 定义检索增强生成流程
 def setup_rag_chain(model_name="gpt-4", temperature=0):
     """设置检索增强生成流程"""
-    prompt_template = """You are an assistant for question-answering tasks. 
-    Use your knowledge to answer the question if the provided context is not relevant. 
-    Otherwise, use the context to inform your answer. 
-    Question: {question} 
-    Context: {context} 
-    Answer:
+    # prompt_template = """You are a professional assistant for question-answering tasks.
+    # When handling question-answering tasks, please provide relevant answers based on the provided context information.
+    # If the context information is not relevant to the question, please use your knowledge base to provide accurate replies to the inquirer.
+    # Please ensure the quality of the answers, including accuracy, relevance, readability, and comprehensibility.
+    # Question: {question}
+    # Context: {context}
+    # Answer:
+    # """
+    prompt_template = """你是一个用于问答任务的专业助手。
+    在处理问答任务时，请根据所提供的上下文信息给出相关答案。
+    如果上下文信息与问题不相关，那么请运用您的知识库为提问者提供准确的答复。
+    请确保回答内容的质量，包括准确性、相关性、可读性和易理解性。
+    问题: {question} 
+    上下文: {context} 
+    回答:
     """
     prompt = ChatPromptTemplate.from_template(prompt_template)
     llm = ChatOpenAI(model_name=model_name, temperature=temperature)
