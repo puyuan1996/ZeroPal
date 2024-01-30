@@ -37,7 +37,7 @@ def load_and_split_document(file_path, chunk_size=500, chunk_overlap=50):
 
 
 # 向量存储建立
-def create_vector_store(chunks, model="OpenAI"):
+def create_vector_store(chunks, model="OpenAI", k=4):
     """将文档块转换为向量并存储到 Weaviate 中"""
     client = Client(embedded_options=EmbeddedOptions())
     embedding_model = OpenAIEmbeddings() if model == "OpenAI" else None  # 可以根据需要替换为其他嵌入模型
@@ -47,7 +47,7 @@ def create_vector_store(chunks, model="OpenAI"):
         embedding=embedding_model,
         by_text=False
     )
-    return vectorstore.as_retriever()
+    return vectorstore.as_retriever(search_kwargs={'k': k})
 
 
 # 定义检索增强生成流程
@@ -56,18 +56,18 @@ def setup_rag_chain(model_name="gpt-4", temperature=0):
     # prompt_template = """You are a professional assistant for question-answering tasks.
     # When handling question-answering tasks, please provide relevant answers based on the provided context information.
     # If the context information is not relevant to the question, please use your knowledge base to provide accurate replies to the inquirer.
-    # Please ensure the quality of the answers, including accuracy, relevance, readability, and comprehensibility.
+    # Please ensure the quality of the answers, including relevance, accuracy, and readability.
     # Question: {question}
     # Context: {context}
     # Answer:
     # """
-    prompt_template = """你是一个用于问答任务的专业助手。
-    在处理问答任务时，请根据所提供的上下文信息给出相关答案。
-    如果上下文信息与问题不相关，那么请运用您的知识库为提问者提供准确的答复。
-    请确保回答内容的质量，包括准确性、相关性、可读性和易理解性。
-    问题: {question} 
-    上下文: {context} 
-    回答:
+    prompt_template = """您是一个用于问答任务的专业助手。
+    在处理问答任务时，请根据所提供的[上下文信息]给出回答。
+    如果[上下文信息]与[问题]不相关，那么请运用您的知识库为提问者提供准确的答复。
+    请确保回答内容的质量，包括相关性、准确性和可读性。
+    [问题]: {question} 
+    [上下文信息]: {context} 
+    [回答]:
     """
     prompt = ChatPromptTemplate.from_template(prompt_template)
     llm = ChatOpenAI(model_name=model_name, temperature=temperature)
@@ -105,14 +105,24 @@ if __name__ == "__main__":
     chunks = load_and_split_document(file_path)
 
     # 创建向量存储
-    retriever = create_vector_store(chunks)
+    retriever = create_vector_store(chunks, k=5)
 
     # 设置 RAG 流程
     rag_chain = setup_rag_chain()
 
     # 提出问题并获取答案
     query = "请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 环境上运行吗？请详细解释原因"
-    # query = "请详细解释 MCTS 算法的原理，并给出带有详细中文注释的 Python 代码示例"
+    """
+    请问 LightZero 具体支持什么算法?
+
+    请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 环境上运行吗？请详细解释原因
+    请问 LightZero 里面实现的 MuZero 算法支持在 Atari 环境上运行吗？请详细解释原因
+
+    请详细解释 MCTS 算法的原理，并给出带有详细中文注释的 Python 代码示例
+
+    请问 LightZero 具体支持什么任务?
+    请问 LightZero 的算法各自支持在哪些任务上运行?请详细解释原因
+    """
 
     # 使用 RAG 链获取参考的文档与答案
     retrieved_documents, result_with_rag = execute_query(retriever, rag_chain, query)

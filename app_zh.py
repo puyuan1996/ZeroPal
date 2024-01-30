@@ -47,7 +47,7 @@ if QUESTION_LANG == "cn":
 # 路径变量，方便之后的文件使用
 file_path = './documents/LightZero_README.zh.md'
 chunks = load_and_split_document(file_path)
-retriever = create_vector_store(chunks)
+retriever = create_vector_store(chunks, k=5)  # k 为检索到的文档块的数量
 rag_chain = setup_rag_chain(model_name="gpt-4")
 # rag_chain = setup_rag_chain(model_name="gpt-3.5-turbo")
 
@@ -107,6 +107,13 @@ if __name__ == "__main__":
     rag_demo.queue().launch(max_threads=concurrency, favicon_path=favicon_path, share=True)
 
     """
-    请问LightZero支持什么算法?
-    请问LightZero的算法各自支持在哪些任务上运行?
+    请问 LightZero 具体支持什么算法?
+
+    请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 环境上运行吗？
+    请问 LightZero 里面实现的 MuZero 算法支持在 Atari 环境上运行吗？
+    
+    请详细解释 MCTS 算法的原理，并给出带有详细中文注释的 Python 代码示例。
+    
+    请问 LightZero 具体支持什么任务?
+    请问 LightZero 的算法各自支持在哪些任务上运行?
     """
