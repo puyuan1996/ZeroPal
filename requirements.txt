@@ -4,3 +4,4 @@ weaviate-client
 requests
 python-dotenv
 dotenv
+sentence-transformers
