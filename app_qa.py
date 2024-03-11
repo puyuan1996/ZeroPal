@@ -1,16 +1,3 @@
-"""
-这段代码的整体功能是创建一个Gradio应用，用户可以在其中输入问题，应用会使用Retrieval-Augmented Generation (RAG)模型来寻找答案并将结果显示在界面上。
-其中，检索到的上下文会在Markdown文档中高亮显示，帮助用户理解答案的来源。应用界面分为两部分：顶部是问答区，底部展示了RAG模型参考的上下文。
-
-结构概述：
-- 导入必要的库和函数。
-- 设置环境变量和全局变量。
-- 加载和处理Markdown文档。
-- 定义处理用户问题并返回答案和高亮显示上下文的函数。
-- 使用Gradio构建用户界面，包括Markdown、输入框、按钮和输出框。
-- 启动Gradio应用并设置为可以分享。
-"""
-
 import os
 
 import gradio as gr
@@ -46,20 +33,29 @@ if QUESTION_LANG == "cn":
 
 # 路径变量，方便之后的文件使用
 file_path = './documents/LightZero_README.zh.md'
-chunks = load_and_split_document(file_path)
-retriever = create_vector_store(chunks, k=5)  # k 为检索到的文档块的数量
-rag_chain = setup_rag_chain(model_name="gpt-4")
-# rag_chain = setup_rag_chain(model_name="gpt-3.5-turbo")
 
 # 加载原始Markdown文档
 loader = TextLoader(file_path)
 orig_documents = loader.load()
 
+def rag_answer(question, model_name, temperature, embedding_model, k):
+    """
+    处理用户问题并返回答案和高亮显示的上下文
 
-def rag_answer(question):
+    :param question: 用户输入的问题
+    :param model_name: 使用的语言模型名称
+    :param temperature: 生成答案时使用的温度参数
+    :param embedding_model: 使用的嵌入模型
+    :param k: 检索到的文档块数量
+    :return: 模型生成的答案和高亮显示上下文的Markdown文本
+    """
     try:
-        retrieved_documents, answer = execute_query(retriever, rag_chain, question)
-        # Highlight the context in the document
+        chunks = load_and_split_document(file_path)
+        retriever = create_vector_store(chunks, model=embedding_model, k=k)
+        rag_chain = setup_rag_chain(model_name=model_name, temperature=temperature)
+
+        retrieved_documents, answer = execute_query(retriever, rag_chain, question, model_name=model_name, temperature=temperature)
+        # 在文档中高亮显示上下文
         context = [retrieved_documents[i].page_content for i in range(len(retrieved_documents))]
         highlighted_document = orig_documents[0].page_content
         for i in range(len(context)):
@@ -71,12 +67,6 @@ def rag_answer(question):
 
 
 if __name__ == "__main__":
-    """
-    在下面的代码中，gr.Blocks构建了Gradio的界面布局，gr.Textbox用于创建文本输入框，gr.Button创建了一个按钮，gr.Markdown则用于显示Markdown格式的内容。
-    gr_submit.click是一个事件处理器，当用户点击提交按钮时，它会调用rag_answer函数，并将输入和输出的组件关联起来。
-    代码中的rag_answer函数负责接收用户的问题，使用RAG模型检索和生成答案，并将检索到的文本段落在Markdown原文中高亮显示。
-    该函数返回模型生成的答案和高亮显示上下文的Markdown文本。
-    """
     with gr.Blocks(title=title, theme='ParityError/Interstellar') as rag_demo:
         gr.Markdown(title_markdown)
 
@@ -84,36 +74,32 @@ if __name__ == "__main__":
             with gr.Column():
                 inputs = gr.Textbox(
                     placeholder="请您输入任何关于 LightZero 的问题。",
-                    label="问题 (Q)")  # 设置输出框，包括答案和高亮显示参考文档
+                    label="问题 (Q)")
+                model_name = gr.Dropdown(
+                    choices=['abab6-chat', 'glm-4', 'gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'],
+                    value='abab6-chat',
+                    label="选择语言模型")
+                temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.01, step=0.01, label="温度参数")
+                embedding_model = gr.Dropdown(
+                    choices=['HuggingFace', 'TensorflowHub', 'OpenAI'],
+                    value='HuggingFace',
+                    label="选择嵌入模型")
+                k = gr.Slider(minimum=1, maximum=10, value=5, step=1, label="检索到的文档块数量")
                 gr_submit = gr.Button('提交')
 
             outputs_answer = gr.Textbox(placeholder="当你点击提交按钮后，这里会显示 RAG 模型给出的回答。",
                                         label="回答 (A)")
         with gr.Row():
-            # placeholder="当你点击提交按钮后，这里会显示参考的文档，其中检索得到的与问题最相关的 context 用高亮显示。"
             outputs_context = gr.Markdown(label="参考的文档，检索得到的 context 用高亮显示 (C)")
 
         gr.Markdown(tos_markdown)
 
         gr_submit.click(
             rag_answer,
-            inputs=inputs,
+            inputs=[inputs, model_name, temperature, embedding_model, k],
             outputs=[outputs_answer, outputs_context],
         )
 
     concurrency = int(os.environ.get('CONCURRENCY', os.cpu_count()))
     favicon_path = os.path.join(os.path.dirname(__file__), 'assets', 'avatar.png')
-    # 启动界面，设置为可以分享。如果分享公网链接失败，可以在本地执行 ngrok http 7860 将本地端口映射到公网
     rag_demo.queue().launch(max_threads=concurrency, favicon_path=favicon_path, share=True)
-
-    """
-    请问 LightZero 具体支持什么算法?
-
-    请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 环境上运行吗？
-    请问 LightZero 里面实现的 MuZero 算法支持在 Atari 环境上运行吗？
-    
-    请详细解释 MCTS 算法的原理，并给出带有详细中文注释的 Python 代码示例。
-    
-    请问 LightZero 具体支持什么任务?
-    请问 LightZero 的算法各自支持在哪些任务上运行?
-    """
