@@ -18,6 +18,7 @@ from langchain.vectorstores import Weaviate
 from weaviate import Client
 from weaviate.embedded import EmbeddedOptions
 from zhipuai import ZhipuAI
+from openai import AzureOpenAI
 
 # 环境设置与文档下载
 load_dotenv()  # 加载环境变量
@@ -25,6 +26,9 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # 从环境变量获取 OpenAI API
 MIMIMAX_API_KEY = os.getenv("MIMIMAX_API_KEY")
 MIMIMAX_GROUP_ID = os.getenv("MIMIMAX_GROUP_ID")
 ZHIPUAI_API_KEY = os.getenv("ZHIPUAI_API_KEY")
+
+AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
+AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT")
 
 # 确保 OPENAI_API_KEY 被正确设置
 if not OPENAI_API_KEY:
@@ -138,6 +142,23 @@ def execute_query_no_rag(model_name="gpt-4", temperature=0, query=""):
         llm = ChatOpenAI(model_name=model_name, temperature=temperature)
         response = llm.invoke(query)
         return response.content
+    elif model_name.startswith("azure_gpt"):
+        client = AzureOpenAI(
+            azure_endpoint=AZURE_ENDPOINT,
+            api_key=AZURE_OPENAI_KEY,
+            api_version="2024-02-15-preview"
+        )
+        message_text = [{"role": "user", "content": query}, ]
+        completion = client.chat.completions.create(
+            model=model_name[6:],  # model_name = 'azure_gpt-4', 'azure_gpt-35-turbo-16k', 'azure_gpt-35-turbo'
+            messages=message_text,
+            temperature=temperature,
+            top_p=0.95,
+            frequency_penalty=0,
+            presence_penalty=0,
+            stop=None
+        )
+        return completion.choices[0].message.content
     elif model_name == 'abab6-chat':
         # 如果是'abab6-chat'模型,使用专门的API调用方式
         url = "https://api.minimax.chat/v1/text/chatcompletion_pro?GroupId=" + MIMIMAX_GROUP_ID
@@ -180,7 +201,8 @@ def execute_query_no_rag(model_name="gpt-4", temperature=0, query=""):
 if __name__ == "__main__":
     # 假设文档已存在于本地
     file_path = './documents/LightZero_README.zh.md'
-    model_name = "glm-4"  # model_name=['abab6-chat', 'glm-4', 'gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo']
+    model_name = "glm-4"  # model_name=['abab6-chat', 'glm-4', 'gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo', 'azure_gpt-4', 'azure_gpt-35-turbo-16k', 'azure_gpt-35-turbo']
+    model_name = 'azure_gpt-35-turbo'
     temperature = 0.01
     embedding_model = 'HuggingFace'  # embedding_model=['HuggingFace', 'TensorflowHub', 'OpenAI']
 

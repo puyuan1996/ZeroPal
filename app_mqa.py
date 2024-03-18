@@ -99,8 +99,8 @@ if __name__ == "__main__":
                     placeholder="请您输入任何关于 LightZero 的问题。",
                     label="问题 (Q)")
                 model_name = gr.Dropdown(
-                    choices=['abab6-chat', 'glm-4', 'gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'],
-                    value='abab6-chat',
+                    choices=['abab6-chat', 'glm-4', 'gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo', 'azure_gpt-4', 'azure_gpt-35-turbo-16k', 'azure_gpt-35-turbo'],
+                    value='azure_gpt-35-turbo',
                     label="选择语言模型")
                 temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.01, step=0.01, label="温度参数")
                 embedding_model = gr.Dropdown(
