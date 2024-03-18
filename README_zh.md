@@ -43,7 +43,6 @@ QUESTION_LANG='cn' # 问题语言，目前可选值为 'cn'
 
 ```python
 
-# rag_demo.py 相对 rag_demo_v0.py 的不同之处在于可以输出检索到的文档块。
 if __name__ == "__main__":
     # 假设文档已存在于本地
     file_path = './documents/LightZero_README.zh.md'
@@ -78,9 +77,9 @@ if __name__ == "__main__":
 ```
 RAG/
 │
-├── rag_demo_v0.py         # RAG 演示脚本，不支持输出检索到的文档块。
 ├── rag_demo.py            # RAG 演示脚本，支持输出检索到的文档块。
-├── app.py                 # 基于 Gradio 和 rag_demo.py 构建的网页交互式应用。
+├── app_qa.py              # 基于 Gradio 和 rag_demo.py 构建的网页交互式应用。
+├── app_mqa.py             # 基于 Gradio 和 rag_demo.py 构建的网页交互式应用。支持保持对话历史。
 ├── .env                   # 环境变量配置文件
 └── documents/             # 文档文件夹
     └── your_document.txt  # 上下文文档

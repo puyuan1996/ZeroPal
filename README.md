@@ -43,7 +43,6 @@ QUESTION_LANG='cn' # The language of the question, currently available option is
 
 ```python
 
-# The difference between rag_demo.py and rag_demo_v0.py is that it can output the retrieved document chunks.
 if __name__ == "__main__":
     # Assuming documents are already present locally
     file_path = './documents/LightZero_README.zh.md'
@@ -78,9 +77,9 @@ if __name__ == "__main__":
 ```
 RAG/
 │
-├── rag_demo_v0.py         # RAG demonstration script without support for outputting retrieved document chunks.
 ├── rag_demo.py            # RAG demonstration script with support for outputting retrieved document chunks.
-├── app.py                 # Web-based interactive application built with Gradio and rag_demo.py.
+├── app_qa.py              # Web-based interactive application built with Gradio and rag_demo.py.
+├── app_mqa.py             # Web-based interactive application built with Gradio and rag_demo.py. Supports maintaining conversation history.
 ├── .env                   # Environment variable configuration file
 └── documents/             # Documents folder
     └── your_document.txt  # Context document
