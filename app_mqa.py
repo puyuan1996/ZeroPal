@@ -54,7 +54,7 @@ def rag_answer(question, model_name, temperature, embedding_model, k):
     :return: 模型生成的答案和高亮显示上下文的Markdown文本
     """
     try:
-        chunks = load_and_split_document(file_path)
+        chunks = load_and_split_document(file_path, chunk_size=5000, chunk_overlap=500)
         retriever = create_vector_store(chunks, model=embedding_model, k=k)
         rag_chain = setup_rag_chain(model_name=model_name, temperature=temperature)
 
@@ -105,7 +105,7 @@ if __name__ == "__main__":
                 temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.01, step=0.01, label="温度参数")
                 embedding_model = gr.Dropdown(
                     choices=['HuggingFace', 'TensorflowHub', 'OpenAI'],
-                    value='HuggingFace',
+                    value='OpenAI',
                     label="选择嵌入模型")
                 k = gr.Slider(minimum=1, maximum=10, value=5, step=1, label="检索到的文档块数量")
                 with gr.Row():

@@ -75,7 +75,7 @@ def setup_rag_chain(model_name="gpt-4", temperature=0):
         prompt_template = """您是一个用于问答任务的专业助手。
         在处理问答任务时,请根据所提供的[上下文信息]给出回答。
         如果[上下文信息]与[问题]不相关,那么请运用您的知识库为提问者提供准确的答复。
-        请确保回答内容的质量,包括相关性、准确性和可读性。
+        请确保回答内容的质量, 包括相关性、准确性和可读性。
         [问题]: {question} 
         [上下文信息]: {context} 
         [回答]:
@@ -122,7 +122,7 @@ def execute_query(retriever, rag_chain, query, model_name="gpt-4", temperature=0
         prompt_template = """您是一个用于问答任务的专业助手。
         在处理问答任务时,请根据所提供的[上下文信息]给出回答。
         如果[上下文信息]与[问题]不相关,那么请运用您的知识库为提问者提供准确的答复。
-        请确保回答内容的质量,包括相关性、准确性和可读性。
+        请确保回答内容的质量, 包括相关性、准确性和可读性。
         [问题]: {question} 
         [上下文信息]: {context} 
         [回答]:
@@ -201,13 +201,14 @@ def execute_query_no_rag(model_name="gpt-4", temperature=0, query=""):
 if __name__ == "__main__":
     # 假设文档已存在于本地
     file_path = './documents/LightZero_README.zh.md'
-    model_name = "glm-4"  # model_name=['abab6-chat', 'glm-4', 'gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo', 'azure_gpt-4', 'azure_gpt-35-turbo-16k', 'azure_gpt-35-turbo']
-    model_name = 'azure_gpt-35-turbo'
+    # model_name = "glm-4"  # model_name=['abab6-chat', 'glm-4', 'gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo', 'azure_gpt-4', 'azure_gpt-35-turbo-16k', 'azure_gpt-35-turbo']
+    model_name = 'azure_gpt-4'
     temperature = 0.01
-    embedding_model = 'HuggingFace'  # embedding_model=['HuggingFace', 'TensorflowHub', 'OpenAI']
+    # embedding_model = 'HuggingFace'  # embedding_model=['HuggingFace', 'TensorflowHub', 'OpenAI']
+    embedding_model = 'OpenAI'  # embedding_model=['HuggingFace', 'TensorflowHub', 'OpenAI']
 
     # 加载和分割文档
-    chunks = load_and_split_document(file_path)
+    chunks = load_and_split_document(file_path, chunk_size=5000, chunk_overlap=500)
 
     # 创建向量存储
     retriever = create_vector_store(chunks, model=embedding_model, k=5)
@@ -216,17 +217,19 @@ if __name__ == "__main__":
     rag_chain = setup_rag_chain(model_name=model_name, temperature=temperature)
 
     # 提出问题并获取答案
-    query = "请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 环境上运行吗？请详细解释原因"
+    query = ("请问 LightZero 具体支持什么任务（tasks/environments）? ")
     """
-    请问 LightZero 具体支持什么算法?
-
-    请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 环境上运行吗？请详细解释原因
-    请问 LightZero 里面实现的 MuZero 算法支持在 Atari 环境上运行吗？请详细解释原因
-
-    请详细解释 MCTS 算法的原理，并给出带有详细中文注释的 Python 代码示例
-
-    请问 LightZero 具体支持什么任务?
-    请问 LightZero 的算法各自支持在哪些任务上运行?请详细解释原因
+    （1）请简要介绍一下 LightZero 
+    （2）请详细介绍 LightZero 的框架结构。 
+    （3）请给出安装 LightZero，运行他们的示例代码的详细步骤 
+    （4）请问 LightZero 具体支持什么任务（tasks/environments）? 
+    （5）请问 LightZero 具体支持什么算法?
+    （6）请问 LightZero 具体支持什么算法，各自支持在哪些任务上运行? 
+    （7）请问 LightZero 里面实现的 MuZero 算法支持在 Atari 任务上运行吗？
+    （8）请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 任务上运行吗？
+    （9）LightZero 支持哪些算法? 各自的优缺点是什么? 我应该如何根据任务特点进行选择呢？
+    （10）请结合 LightZero 中的代码介绍他们是如何实现 MCTS 的。
+    （11）请问对这个仓库提出详细的改进建议。
     """
 
     # 使用 RAG 链获取参考的文档与答案
