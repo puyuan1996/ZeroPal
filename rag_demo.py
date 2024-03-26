@@ -26,6 +26,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # 从环境变量获取 OpenAI API
 MIMIMAX_API_KEY = os.getenv("MIMIMAX_API_KEY")
 MIMIMAX_GROUP_ID = os.getenv("MIMIMAX_GROUP_ID")
 ZHIPUAI_API_KEY = os.getenv("ZHIPUAI_API_KEY")
+KIMI_OPENAI_API_KEY = os.getenv("KIMI_OPENAI_API_KEY")
 
 AZURE_OPENAI_KEY = os.getenv("AZURE_OPENAI_KEY")
 AZURE_ENDPOINT = os.getenv("AZURE_ENDPOINT")
@@ -119,14 +120,24 @@ def execute_query(retriever, rag_chain, query, model_name="gpt-4", temperature=0
         response_text = rag_chain_response
     else:
         # 如果没有RAG链,则将检索到的文档块和查询问题按照指定格式输入给语言模型
-        prompt_template = """您是一个用于问答任务的专业助手。
-        在处理问答任务时,请根据所提供的[上下文信息]给出回答。
-        如果[上下文信息]与[问题]不相关,那么请运用您的知识库为提问者提供准确的答复。
-        请确保回答内容的质量, 包括相关性、准确性和可读性。
-        [问题]: {question} 
-        [上下文信息]: {context} 
-        [回答]:
-        """
+        if model_name == "kimi":
+            # 对于有检索能力的模型,使用不同的模板
+            prompt_template = """您是一个用于问答任务的专业助手。
+            在处理问答任务时，请根据所提供的【上下文信息】和【你的知识库和检索到的相关文档】给出回答。
+            请确保回答内容的质量，包括相关性、准确性和可读性。
+           【问题】: {question} 
+           【上下文信息】: {context} 
+           【回答】:
+            """
+        else:
+            prompt_template = """您是一个用于问答任务的专业助手。
+            在处理问答任务时，请根据所提供的【上下文信息】给出回答。
+            如果【上下文信息】与【问题】不相关,那么请运用您的知识库为提问者提供准确的答复。
+            请确保回答内容的质量，包括相关性、准确性和可读性。
+           【问题】: {question} 
+           【上下文信息】: {context} 
+           【回答】:
+            """
 
         context = '\n'.join(
             [f'**Document {i}**: ' + retrieved_documents[i].page_content for i in range(len(retrieved_documents))])
@@ -192,7 +203,30 @@ def execute_query_no_rag(model_name="gpt-4", temperature=0, query=""):
             messages=[{"role": "user", "content": query}]
         )
         return response.choices[0].message.content
-
+    elif model_name == 'kimi':
+        # 如果是'kimi'模型,使用专门的API调用方式
+        from openai import OpenAI
+        client = OpenAI(
+            api_key=KIMI_OPENAI_API_KEY,
+            base_url="https://api.moonshot.cn/v1",
+        )
+        messages = [
+            {
+                "role": "system",
+                "content": "你是 Kimi，由 Moonshot AI 提供的人工智能助手，你更擅长中文和英文的对话。你会为用户提供安全，有帮助，准确的回答。同时，你会拒绝一切涉及恐怖主义，种族歧视，黄色暴力等问题的回答。Moonshot AI 为专有名词，不可翻译成其他语言。",
+            },
+            {"role": "user",
+             "content": query},
+        ]
+        completion = client.chat.completions.create(
+            model="moonshot-v1-128k",
+            messages=messages,
+            temperature=0.01,
+            top_p=1.0,
+            n=1,  # 为每条输入消息生成多少个结果
+            stream=False  # 流式输出
+        )
+        return completion.choices[0].message.content
     else:
         # 如果模型不支持,抛出异常
         raise ValueError(f"Unsupported model: {model_name}")
@@ -217,7 +251,7 @@ if __name__ == "__main__":
     rag_chain = setup_rag_chain(model_name=model_name, temperature=temperature)
 
     # 提出问题并获取答案
-    query = ("请问 LightZero 具体支持什么任务（tasks/environments）? ")
+    query = ("GitHub - opendilab/LightZero: [NeurIPS 2023 Spotlight] LightZero: A Unified Benchmark for Monte Carl  请根据这个仓库回答下面的问题：（1）请简要介绍一下 LightZero （2）请详细介绍 LightZero 的框架结构。 （3）请给出安装 LightZero，运行他们的示例代码的详细步骤 （4）- 请问 LightZero 具体支持什么任务（tasks/environments）? （5）请问 LightZero 具体支持什么算法?（6）请问 LightZero 具体支持什么算法，各自支持在哪些任务上运行? （7）请问 LightZero 里面实现的 MuZero 算法支持在 Atari 任务上运行吗？（8）请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 任务上运行吗？（9）LightZero 支持哪些算法? 各自的优缺点是什么? 我应该如何根据任务特点进行选择呢？（10）请结合 LightZero 中的代码介绍他们是如何实现 MCTS 的。（11）请问对这个仓库提出详细的改进建议")
     """
     （1）请简要介绍一下 LightZero 
     （2）请详细介绍 LightZero 的框架结构。 
