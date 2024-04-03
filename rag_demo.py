@@ -234,11 +234,11 @@ def execute_query_no_rag(model_name="gpt-4", temperature=0, query=""):
 
 if __name__ == "__main__":
     # 假设文档已存在于本地
-    file_path = './documents/LightZero_README.zh.md'
+    file_path = './documents/LightZero_README_zh.md'
     # model_name = "glm-4"  # model_name=['abab6-chat', 'glm-4', 'gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo', 'azure_gpt-4', 'azure_gpt-35-turbo-16k', 'azure_gpt-35-turbo']
-    model_name = 'azure_gpt-4'
+    # model_name = 'azure_gpt-4'
+    model_name = 'kimi'
     temperature = 0.01
-    # embedding_model = 'HuggingFace'  # embedding_model=['HuggingFace', 'TensorflowHub', 'OpenAI']
     embedding_model = 'OpenAI'  # embedding_model=['HuggingFace', 'TensorflowHub', 'OpenAI']
 
     # 加载和分割文档
@@ -251,11 +251,11 @@ if __name__ == "__main__":
     rag_chain = setup_rag_chain(model_name=model_name, temperature=temperature)
 
     # 提出问题并获取答案
-    query = ("GitHub - opendilab/LightZero: [NeurIPS 2023 Spotlight] LightZero: A Unified Benchmark for Monte Carl  请根据这个仓库回答下面的问题：（1）请简要介绍一下 LightZero （2）请详细介绍 LightZero 的框架结构。 （3）请给出安装 LightZero，运行他们的示例代码的详细步骤 （4）- 请问 LightZero 具体支持什么任务（tasks/environments）? （5）请问 LightZero 具体支持什么算法?（6）请问 LightZero 具体支持什么算法，各自支持在哪些任务上运行? （7）请问 LightZero 里面实现的 MuZero 算法支持在 Atari 任务上运行吗？（8）请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 任务上运行吗？（9）LightZero 支持哪些算法? 各自的优缺点是什么? 我应该如何根据任务特点进行选择呢？（10）请结合 LightZero 中的代码介绍他们是如何实现 MCTS 的。（11）请问对这个仓库提出详细的改进建议")
+    query = ("请回答下面的问题：（1）请简要介绍一下 LightZero。（2）请详细介绍 LightZero 的框架结构。 （3）请给出安装 LightZero，运行他们的示例代码的详细步骤。（4）- 请问 LightZero 具体支持什么任务（tasks/environments）? （5）请问 LightZero 具体支持什么算法?（6）请问 LightZero 具体支持什么算法，各自支持在哪些任务上运行? （7）请问 LightZero 里面实现的 MuZero 算法支持在 Atari 任务上运行吗？（8）请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 任务上运行吗？（9）LightZero 支持哪些算法? 各自的优缺点是什么? 我应该如何根据任务特点进行选择呢？（10）请结合 LightZero 中的代码介绍他们是如何实现 MCTS 的。（11）请问对这个仓库提出详细的改进建议")
     """
-    （1）请简要介绍一下 LightZero 
+    （1）请简要介绍一下 LightZero。 
     （2）请详细介绍 LightZero 的框架结构。 
-    （3）请给出安装 LightZero，运行他们的示例代码的详细步骤 
+    （3）请给出安装 LightZero，运行他们的示例代码的详细步骤 。
     （4）请问 LightZero 具体支持什么任务（tasks/environments）? 
     （5）请问 LightZero 具体支持什么算法?
     （6）请问 LightZero 具体支持什么算法，各自支持在哪些任务上运行? 
@@ -266,6 +266,7 @@ if __name__ == "__main__":
     （11）请问对这个仓库提出详细的改进建议。
     """
 
+    # query = ("请检索最近关于Transformer+RL的最新论文，并给出详细介绍")
     # 使用 RAG 链获取参考的文档与答案
     retrieved_documents, result_with_rag = execute_query(retriever, rag_chain, query, model_name=model_name,
                                                          temperature=temperature)

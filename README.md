@@ -45,7 +45,7 @@ QUESTION_LANG='cn' # The language of the question, currently available option is
 
 if __name__ == "__main__":
     # Assuming documents are already present locally
-    file_path = './documents/LightZero_README.zh.md'
+    file_path = './documents/LightZero_README_zh.md'
     # Load and split document
     chunks = load_and_split_document(file_path)
     # Create vector store
