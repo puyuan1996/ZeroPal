@@ -45,7 +45,7 @@ QUESTION_LANG='cn' # 问题语言，目前可选值为 'cn'
 
 if __name__ == "__main__":
     # 假设文档已存在于本地
-    file_path = './documents/LightZero_README.zh.md'
+    file_path = './documents/LightZero_README_zh.md'
     # 加载和分割文档
     chunks = load_and_split_document(file_path)
     # 创建向量存储

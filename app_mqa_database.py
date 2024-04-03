@@ -1,7 +1,12 @@
 import os
+import sqlite3
+import threading
+
 import gradio as gr
 from dotenv import load_dotenv
 from langchain.document_loaders import TextLoader
+
+from RAG.analyze_conversation_history import analyze_conversation_history
 from rag_demo import load_and_split_document, create_vector_store, setup_rag_chain, execute_query
 
 # 环境设置
@@ -38,7 +43,7 @@ if QUESTION_LANG == "cn":
     **版权所有 © 2024 OpenDILab。保留所有权利。**
     """
 
-# 路径变量，方便之后的文件使用
+# 路径变量,方便之后的文件使用
 file_path = './documents/LightZero_README_zh.md'
 
 # 加载原始Markdown文档
@@ -46,16 +51,67 @@ loader = TextLoader(file_path)
 orig_documents = loader.load()
 
 # 存储对话历史
-conversation_history = []
+conversation_history = {}
+
+# 创建线程局部数据对象
+threadLocal = threading.local()
 
 
-def rag_answer(question, temperature, k):
+def get_db_connection():
+    """
+    返回当前线程的数据库连接
+    """
+    conn = getattr(threadLocal, 'conn', None)
+    if conn is None:
+        # 连接到SQLite数据库
+        conn = sqlite3.connect('database/conversation_history.db')
+        c = conn.cursor()
+        # Drop the existing 'history' table if it exists
+        # c.execute('DROP TABLE IF EXISTS history')
+        # 创建存储对话历史的表
+        c.execute('''CREATE TABLE IF NOT EXISTS history
+                     (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                     user_id TEXT NOT NULL,
+                     user_input TEXT NOT NULL,
+                     assistant_output TEXT NOT NULL,
+                     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+        threadLocal.conn = conn
+    return conn
+
+
+def get_db_cursor():
+    """
+    返回当前线程的数据库游标
+    """
+    conn = get_db_connection()
+    c = getattr(threadLocal, 'cursor', None)
+    if c is None:
+        c = conn.cursor()
+        threadLocal.cursor = c
+    return c
+
+
+# 程序结束时清理数据库连接
+def close_db_connection():
+    conn = getattr(threadLocal, 'conn', None)
+    if conn is not None:
+        conn.close()
+        setattr(threadLocal, 'conn', None)
+
+    c = getattr(threadLocal, 'cursor', None)
+    if c is not None:
+        c.close()
+        setattr(threadLocal, 'cursor', None)
+
+
+def rag_answer(question, temperature, k, user_id):
     """
     处理用户问题并返回答案和高亮显示的上下文
 
     :param question: 用户输入的问题
     :param temperature: 生成答案时使用的温度参数
     :param k: 检索到的文档块数量
+    :param user_id: 用户ID
     :return: 模型生成的答案和高亮显示上下文的Markdown文本
     """
     try:
@@ -63,14 +119,33 @@ def rag_answer(question, temperature, k):
         retriever = create_vector_store(chunks, model='OpenAI', k=k)
         rag_chain = setup_rag_chain(model_name='kimi', temperature=temperature)
 
-        # 将问题添加到对话历史中
-        conversation_history.append(("User", question))
+        if user_id not in conversation_history:
+            conversation_history[user_id] = []
 
-        # 将对话历史转换为字符串
-        history_str = "\n".join([f"{role}: {text}" for role, text in conversation_history])
+        conversation_history[user_id].append((f"User[{user_id}]", question))
+
+        history_str = "\n".join([f"{role}: {text}" for role, text in conversation_history[user_id]])
 
         retrieved_documents, answer = execute_query(retriever, rag_chain, history_str, model_name='kimi',
                                                     temperature=temperature)
+
+        ############################
+        # 获取当前线程的数据库连接和游标
+        ############################
+        conn = get_db_connection()
+        c = get_db_cursor()
+
+        # 分析对话历史
+        # analyze_conversation_history()
+        # 获取总的对话记录数
+        c.execute("SELECT COUNT(*) FROM history")
+        total_records = c.fetchone()[0]
+        print(f"总对话记录数: {total_records}")
+
+        # 将问题和回答存储到数据库
+        c.execute("INSERT INTO history (user_id, user_input, assistant_output) VALUES (?, ?, ?)",
+                  (user_id, question, answer))
+        conn.commit()
 
         # 在文档中高亮显示上下文
         context = [retrieved_documents[i].page_content for i in range(len(retrieved_documents))]
@@ -78,37 +153,26 @@ def rag_answer(question, temperature, k):
         for i in range(len(context)):
             highlighted_document = highlighted_document.replace(context[i], f"<mark>{context[i]}</mark>")
 
-        # 将回答添加到对话历史中
-        conversation_history.append(("Assistant", answer))
+        conversation_history[user_id].append(("Assistant", answer))
 
-        # 将对话历史存储到数据库中（此处省略数据库操作代码）
-
-        # 返回完整的对话历史
-        full_history = "\n".join([f"{role}: {text}" for role, text in conversation_history])
-
+        full_history = "\n".join([f"{role}: {text}" for role, text in conversation_history[user_id]])
     except Exception as e:
         print(f"An error occurred: {e}")
-        return "处理您的问题时出现错误，请稍后再试。", "", ""
+        return "处理您的问题时出现错误,请稍后再试。", "", ""
+    finally:
+        # 不再在这里关闭游标和连接
+        pass
 
     return answer, highlighted_document, full_history
 
 
-def clear_context():
+def clear_context(user_id):
     """
     清除对话历史
     """
-    global conversation_history
-    conversation_history = []
+    if user_id in conversation_history:
+        conversation_history[user_id] = []
     return "", "", ""
-
-
-def export_history():
-    """
-    导出对话历史记录
-    """
-    # 从数据库中获取完整的对话历史记录（此处省略数据库操作代码）
-    exported_history = "对话历史记录：\n" + "\n".join([f"{role}: {text}" for role, text in conversation_history])
-    return exported_history
 
 
 if __name__ == "__main__":
@@ -117,24 +181,27 @@ if __name__ == "__main__":
 
         with gr.Row():
             with gr.Column():
+                user_id = gr.Textbox(
+                    placeholder="请输入您的真实姓名或昵称作为用户ID",
+                    label="用户ID")
                 inputs = gr.Textbox(
                     placeholder="请您在这里输入任何关于 LightZero 的问题。",
-                    label="问题 (Q)")
+                    label="问题")
                 temperature = gr.Slider(minimum=0.0, maximum=1.0, value=0.01, step=0.01, label="温度参数")
                 k = gr.Slider(minimum=1, maximum=10, value=5, step=1, label="检索到的文档块数量")
                 with gr.Row():
                     gr_submit = gr.Button('提交')
                     gr_clear = gr.Button('清除上下文')
 
-            outputs_answer = gr.Textbox(placeholder="当你点击提交按钮后，这里会显示 RAG 模型给出的回答。",
-                                        label="回答 (A)")
+            outputs_answer = gr.Textbox(placeholder="当你点击提交按钮后,这里会显示 RAG 模型给出的回答。",
+                                        label="回答")
         outputs_history = gr.Textbox(label="对话历史")
         with gr.Row():
-            outputs_context = gr.Markdown(label="参考的文档，检索得到的 context 用高亮显示 (C)")
-        gr_clear.click(clear_context, outputs=[outputs_context, outputs_history])
+            outputs_context = gr.Markdown(label="参考的文档(检索得到的相关文段用高亮显示)")
+        gr_clear.click(clear_context, inputs=user_id, outputs=[outputs_context, outputs_history])
         gr_submit.click(
             rag_answer,
-            inputs=[inputs, temperature, k],
+            inputs=[inputs, temperature, k, user_id],
             outputs=[outputs_answer, outputs_context, outputs_history],
         )
         gr.Markdown(tos_markdown)
@@ -142,3 +209,6 @@ if __name__ == "__main__":
     concurrency = int(os.environ.get('CONCURRENCY', os.cpu_count()))
     favicon_path = os.path.join(os.path.dirname(__file__), 'assets', 'avatar.png')
     zero_pal.queue().launch(max_threads=concurrency, favicon_path=favicon_path, share=True)
+
+    # 在合适的地方，例如程序退出时，调用close_db_connection函数
+    close_db_connection()

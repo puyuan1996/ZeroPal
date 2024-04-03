@@ -1,7 +1,9 @@
+gradio
 openai
 langchain
 weaviate-client
 requests
 python-dotenv
-dotenv
+tiktoken
 sentence-transformers
+zhipuai
