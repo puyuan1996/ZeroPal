@@ -13,12 +13,12 @@ if QUESTION_LANG == "cn":
     title = "ZeroPal"
     title_markdown = """
     <div align="center">
-        <img src="https://raw.githubusercontent.com/puyuan1996/RAG/main/assets/banner.svg" width="80%" height="20%" alt="Banner Image">
+        <img src="https://raw.githubusercontent.com/puyuan1996/ZeroPal/main/assets/banner.svg" width="80%" height="20%" alt="Banner Image">
     </div>
     
     📢 **操作说明**：请在下方的“问题”框中输入关于 LightZero 的问题，并点击“提交”按钮。右侧的“回答”框将展示 RAG 模型提供的答案。
     您可以在问答框下方查看当前“对话历史”，点击“清除上下文”按钮可清空历史记录。在“对话历史”框下方，您将找到相关参考文档，其中相关文段将以黄色高亮显示。
-    如果您喜欢这个项目，请在 GitHub [LightZero RAG Demo](https://github.com/puyuan1996/RAG) 上给我们点赞！✨ 您的支持是我们持续更新的动力。
+    如果您喜欢这个项目，请在 GitHub [LightZero RAG Demo](https://github.com/puyuan1996/ZeroPal) 上给我们点赞！✨ 您的支持是我们持续更新的动力。
     
     <div align="center">
         <strong>注意：算法模型输出可能包含一定的随机性。结果不代表开发者和相关 AI 服务的态度和意见。本项目开发者不对结果作出任何保证，仅供参考之用。使用该服务即代表同意后文所述的使用条款。</strong>
@@ -65,13 +65,12 @@ def rag_answer(question, temperature, k):
         retriever = get_retriever(vectorstore, k)
         rag_chain = setup_rag_chain(model_name='kimi', temperature=temperature)
 
-        # 将问题添加到对话历史中
-        conversation_history.append(("User", question))
-
         # 将对话历史转换为字符串
         history_str = "\n".join([f"{role}: {text}" for role, text in conversation_history])
-
-        retrieved_documents, answer = execute_query(retriever, rag_chain, history_str, model_name='kimi',
+        history_question = [history_str, question]
+        # 将问题添加到对话历史中
+        conversation_history.append(("User", question))
+        retrieved_documents, answer = execute_query(retriever, rag_chain, history_question, model_name='kimi',
                                                     temperature=temperature)
 
         # 在文档中高亮显示上下文

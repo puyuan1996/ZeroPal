@@ -6,7 +6,7 @@ import gradio as gr
 from dotenv import load_dotenv
 from langchain.document_loaders import TextLoader
 
-from RAG.analyze_conversation_history import analyze_conversation_history
+from analyze_conversation_history import analyze_conversation_history
 from rag_demo import load_and_split_document, create_vector_store, setup_rag_chain, execute_query, get_retriever
 
 # 环境设置
@@ -18,28 +18,28 @@ if QUESTION_LANG == "cn":
     title = "ZeroPal"
     title_markdown = """
     <div align="center">
-        <img src="https://raw.githubusercontent.com/puyuan1996/RAG/main/assets/banner.svg" width="80%" height="20%" alt="Banner Image">
+        <img src="https://raw.githubusercontent.com/puyuan1996/ZeroPal/main/assets/banner.svg" width="80%" height="20%" alt="Banner Image">
     </div>
-    
+
     📢 **操作说明**：请在下方的“问题”框中输入关于 LightZero 的问题，并点击“提交”按钮。右侧的“回答”框将展示 RAG 模型提供的答案。
-    您可以在问答框下方查看当前“对话历史”，点击“清除上下文”按钮可清空历史记录。在“对话历史”框下方，您将找到相关参考文档，其中相关文段将以黄色高亮显示。
-    如果您喜欢这个项目，请在 GitHub [LightZero RAG Demo](https://github.com/puyuan1996/RAG) 上给我们点赞！✨ 您的支持是我们持续更新的动力。
-    
+    您可以在问答框下方查看当前“对话历史”，点击“清除对话历史”按钮可清空历史记录。在“对话历史”框下方，您将找到相关参考文档，其中相关文段将以黄色高亮显示。
+    如果您喜欢这个项目，请在 GitHub [LightZero RAG Demo](https://github.com/puyuan1996/ZeroPal) 上给我们点赞！✨ 您的支持是我们持续更新的动力。
+
     <div align="center">
         <strong>注意：算法模型输出可能包含一定的随机性。结果不代表开发者和相关 AI 服务的态度和意见。本项目开发者不对结果作出任何保证，仅供参考之用。使用该服务即代表同意后文所述的使用条款。</strong>
     </div>
     """
     tos_markdown = """
     ### 使用条款
-    
+
     使用本服务的玩家需同意以下条款：
-    
+
     - 本服务为探索性研究的预览版，仅供非商业用途。
     - 服务不得用于任何非法、有害、暴力、种族主义或其他令人反感的目的。
     - 服务提供有限的安全措施，并可能生成令人反感的内容。
     - 如果您对服务体验不满，请通过 opendilab@pjlab.org.cn 与我们联系！我们承诺修复问题并不断改进项目。
     - 为了获得最佳体验，请使用台式电脑，因为移动设备可能会影响视觉效果。
-    
+
     **版权所有 © 2024 OpenDILab。保留所有权利。**
     """
 
@@ -125,11 +125,11 @@ def rag_answer(question, temperature, k, user_id):
         if user_id not in conversation_history:
             conversation_history[user_id] = []
 
+        history_str = "\n".join([f"{role}: {text}" for role, text in conversation_history[user_id]])
         conversation_history[user_id].append((f"User[{user_id}]", question))
 
-        history_str = "\n".join([f"{role}: {text}" for role, text in conversation_history[user_id]])
-
-        retrieved_documents, answer = execute_query(retriever, rag_chain, history_str, model_name='kimi',
+        history_question = [history_str, question]
+        retrieved_documents, answer = execute_query(retriever, rag_chain, history_question, model_name='kimi',
                                                     temperature=temperature)
 
         ############################
@@ -194,7 +194,7 @@ if __name__ == "__main__":
                 k = gr.Slider(minimum=1, maximum=10, value=5, step=1, label="检索到的文档块数量")
                 with gr.Row():
                     gr_submit = gr.Button('提交')
-                    gr_clear = gr.Button('清除上下文')
+                    gr_clear = gr.Button('清除对话历史')
 
             outputs_answer = gr.Textbox(placeholder="当你点击提交按钮后,这里会显示 RAG 模型给出的回答。",
                                         label="回答")

@@ -77,13 +77,13 @@ def setup_rag_chain(model_name="gpt-4", temperature=0):
     """设置检索增强生成流程"""
     if model_name.startswith("gpt"):
         # 如果是以gpt开头的模型,使用原来的逻辑
-        prompt_template = """您是一个用于问答任务的专业助手。
-        在处理问答任务时,请根据所提供的[上下文信息]给出回答。
-        如果[上下文信息]与[问题]不相关,那么请运用您的知识库为提问者提供准确的答复。
-        请确保回答内容的质量, 包括相关性、准确性和可读性。
-        [问题]: {question} 
-        [上下文信息]: {context} 
-        [回答]:
+        prompt_template = """
+        您是一个擅长问答任务的专业助手。在执行问答任务时，应优先考虑所提供的**上下文信息**来形成回答，并适当参照**对话历史**。
+        如果**上下文信息**与**问题**无直接相关性，您应依据自己的知识库向提问者提供准确的信息。务必确保您的答案在相关性、准确性和可读性方面达到高标准。
+        **对话历史**: {conversation_history}
+        **问题**: {question}
+        **上下文信息**: {context}
+        **回答**:
         """
         prompt = ChatPromptTemplate.from_template(prompt_template)
         llm = ChatOpenAI(model_name=model_name, temperature=temperature)
@@ -115,37 +115,31 @@ def execute_query(retriever, rag_chain, query, model_name="gpt-4", temperature=0
     retrieved_documents: 检索到的文档块列表
     response_text: 生成的回答文本
     """
+    if isinstance(query, list):
+        [conversation_history, question] = query
+    else:
+        conversation_history = ''
+        question = query
+
     # 使用检索器检索相关文档块
-    retrieved_documents = retriever.invoke(query)
+    retrieved_documents = retriever.invoke(question)
 
     if rag_chain is not None:
         # 如果有RAG链,则使用RAG链生成回答
-        rag_chain_response = rag_chain.invoke({"context": retrieved_documents, "question": query})
+        rag_chain_response = rag_chain.invoke({"context": retrieved_documents, "question": question})
         response_text = rag_chain_response
     else:
-        # 如果没有RAG链,则将检索到的文档块和查询问题按照指定格式输入给语言模型
-        if model_name == "kimi":
-            # 对于有检索能力的模型,使用不同的模板
-            prompt_template = """您是一个用于问答任务的专业助手。
-            在处理问答任务时，请根据所提供的【上下文信息】和【你的知识库和检索到的相关文档】给出回答。
-            请确保回答内容的质量，包括相关性、准确性和可读性。
-           【问题】: {question} 
-           【上下文信息】: {context} 
-           【回答】:
-            """
-        else:
-            prompt_template = """您是一个用于问答任务的专业助手。
-            在处理问答任务时，请根据所提供的【上下文信息】给出回答。
-            如果【上下文信息】与【问题】不相关,那么请运用您的知识库为提问者提供准确的答复。
-            请确保回答内容的质量，包括相关性、准确性和可读性。
-           【问题】: {question} 
-           【上下文信息】: {context} 
-           【回答】:
-            """
-
+        prompt_template = """
+        【对话历史】: {conversation_history}
+        【上下文信息】: {context}
+        您是一个擅长问答任务的专业助手。在执行问答任务时，应优先考虑所提供的【上下文信息】来形成回答，并适当参照【对话历史】。
+        如果【上下文信息】与【问题】无直接相关性，您应依据自己的知识库向提问者提供准确的信息。务必确保您的答案在相关性、准确性和可读性方面达到高标准。
+        【问题】: {question}
+        【回答】:
+        """
         context = '\n'.join(
-            [f'**Document {i}**: ' + retrieved_documents[i].page_content for i in range(len(retrieved_documents))])
-        prompt = prompt_template.format(question=query, context=context)
+            [retrieved_documents[i].page_content for i in range(len(retrieved_documents))])
+        prompt = prompt_template.format(conversation_history=conversation_history, question=question, context=context)
         response_text = execute_query_no_rag(model_name=model_name, temperature=temperature, query=prompt)
     return retrieved_documents, response_text
 
@@ -225,7 +219,7 @@ def execute_query_no_rag(model_name="gpt-4", temperature=0, query=""):
         completion = client.chat.completions.create(
             model="moonshot-v1-128k",
             messages=messages,
-            temperature=0.01,
+            temperature=temperature,
             top_p=1.0,
             n=1,  # 为每条输入消息生成多少个结果
             stream=False  # 流式输出
@@ -250,7 +244,7 @@ if __name__ == "__main__":
 
     # 创建向量存储
     vectorstore = create_vector_store(chunks, model=embedding_model)
-    retriever = get_retriever(vectorstore, k=4)
+    retriever = get_retriever(vectorstore, k=5)
 
     # 设置 RAG 流程
     rag_chain = setup_rag_chain(model_name=model_name, temperature=temperature)
