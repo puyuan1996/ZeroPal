@@ -37,7 +37,8 @@ QUESTION_LANG='cn' # The language of the question, currently available option is
 ```
 
 4. Ensure you have available documents as context or use the commented-out code snippet to download the documents you want to reference.
-5. Run the `python3 -u app_mqa_database.py` file to test ZeroPal on a local web page.
+5. Run the `python3 -u rag_demo.py` file to test ZeroPal on the local command line.
+6. Run the `python3 -u app_mqa_database.py` file to test ZeroPal on a local web page.
 
 ## Example
 
@@ -80,8 +81,8 @@ if __name__ == "__main__":
 RAG/
 │
 ├── rag_demo.py            # RAG demonstration script with support for outputting retrieved document chunks.
-├── app_mqa.py              # Web-based interactive application built with Gradio and rag_demo.py.
-├── app_mqa_database.py             # Web-based interactive application built with Gradio and rag_demo.py. Supports maintaining the database of conversation history.
+├── app_mqa.py             # Web-based interactive application built with Gradio and rag_demo.py.
+├── app_mqa_database.py    # Web-based interactive application built with Gradio and rag_demo.py. Supports maintaining the database of conversation history.
 ├── .env                   # Environment variable configuration file
 └── documents/             # Documents folder
     └── your_document.txt  # Context document

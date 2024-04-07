@@ -37,7 +37,8 @@ QUESTION_LANG='cn' # 问题语言，目前可选值为 'cn'
 ```
 
 4. 确保已经有可用的文档作为上下文，或者使用注释掉的代码段下载你需要参考的文档。
-5. 执行 `python3 -u app_mqa_database.py` 文件即可在本地的网页上测试 ZeroPal。
+5. 执行 `python3 -u rag_demo.py` 文件即可在本地命令行测试 ZeroPal。
+6. 执行 `python3 -u app_mqa_database.py` 文件即可在本地的网页上测试 ZeroPal。
 
 ## 示例
 
