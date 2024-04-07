@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from langchain.document_loaders import TextLoader
 
 from RAG.analyze_conversation_history import analyze_conversation_history
-from rag_demo import load_and_split_document, create_vector_store, setup_rag_chain, execute_query
+from rag_demo import load_and_split_document, create_vector_store, setup_rag_chain, execute_query, get_retriever
 
 # 环境设置
 load_dotenv()  # 加载环境变量
@@ -104,6 +104,10 @@ def close_db_connection():
         setattr(threadLocal, 'cursor', None)
 
 
+chunks = load_and_split_document(file_path, chunk_size=5000, chunk_overlap=500)
+vectorstore = create_vector_store(chunks, model='OpenAI')
+
+
 def rag_answer(question, temperature, k, user_id):
     """
     处理用户问题并返回答案和高亮显示的上下文
@@ -115,8 +119,7 @@ def rag_answer(question, temperature, k, user_id):
     :return: 模型生成的答案和高亮显示上下文的Markdown文本
     """
     try:
-        chunks = load_and_split_document(file_path, chunk_size=5000, chunk_overlap=500)
-        retriever = create_vector_store(chunks, model='OpenAI', k=k)
+        retriever = get_retriever(vectorstore, k)
         rag_chain = setup_rag_chain(model_name='kimi', temperature=temperature)
 
         if user_id not in conversation_history:
@@ -158,7 +161,7 @@ def rag_answer(question, temperature, k, user_id):
         full_history = "\n".join([f"{role}: {text}" for role, text in conversation_history[user_id]])
     except Exception as e:
         print(f"An error occurred: {e}")
-        return "处理您的问题时出现错误,请稍后再试。", "", ""
+        return f"处理您的问题时出现错误,请稍后再试。错误内容为：{e}", "", ""
     finally:
         # 不再在这里关闭游标和连接
         pass

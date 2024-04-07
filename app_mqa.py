@@ -2,7 +2,7 @@ import os
 import gradio as gr
 from dotenv import load_dotenv
 from langchain.document_loaders import TextLoader
-from rag_demo import load_and_split_document, create_vector_store, setup_rag_chain, execute_query
+from rag_demo import load_and_split_document, create_vector_store, setup_rag_chain, execute_query, get_retriever
 
 # 环境设置
 load_dotenv()  # 加载环境变量
@@ -48,6 +48,9 @@ orig_documents = loader.load()
 # 存储对话历史
 conversation_history = []
 
+chunks = load_and_split_document(file_path, chunk_size=5000, chunk_overlap=500)
+vectorstore = create_vector_store(chunks, model='OpenAI')
+
 
 def rag_answer(question, temperature, k):
     """
@@ -59,8 +62,7 @@ def rag_answer(question, temperature, k):
     :return: 模型生成的答案和高亮显示上下文的Markdown文本
     """
     try:
-        chunks = load_and_split_document(file_path, chunk_size=5000, chunk_overlap=500)
-        retriever = create_vector_store(chunks, model='OpenAI', k=k)
+        retriever = get_retriever(vectorstore, k)
         rag_chain = setup_rag_chain(model_name='kimi', temperature=temperature)
 
         # 将问题添加到对话历史中

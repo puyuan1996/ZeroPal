@@ -47,7 +47,7 @@ def load_and_split_document(file_path, chunk_size=500, chunk_overlap=50):
 
 
 # 向量存储建立
-def create_vector_store(chunks, model="OpenAI", k=4):
+def create_vector_store(chunks, model="OpenAI"):
     """将文档块转换为向量并存储到 Weaviate 中"""
     client = Client(embedded_options=EmbeddedOptions())
 
@@ -66,6 +66,10 @@ def create_vector_store(chunks, model="OpenAI", k=4):
         embedding=embedding_model,
         by_text=False
     )
+    return vectorstore
+
+
+def get_retriever(vectorstore, k=4):
     return vectorstore.as_retriever(search_kwargs={'k': k})
 
 
@@ -251,7 +255,8 @@ if __name__ == "__main__":
     rag_chain = setup_rag_chain(model_name=model_name, temperature=temperature)
 
     # 提出问题并获取答案
-    query = ("请回答下面的问题：（1）请简要介绍一下 LightZero。（2）请详细介绍 LightZero 的框架结构。 （3）请给出安装 LightZero，运行他们的示例代码的详细步骤。（4）- 请问 LightZero 具体支持什么任务（tasks/environments）? （5）请问 LightZero 具体支持什么算法?（6）请问 LightZero 具体支持什么算法，各自支持在哪些任务上运行? （7）请问 LightZero 里面实现的 MuZero 算法支持在 Atari 任务上运行吗？（8）请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 任务上运行吗？（9）LightZero 支持哪些算法? 各自的优缺点是什么? 我应该如何根据任务特点进行选择呢？（10）请结合 LightZero 中的代码介绍他们是如何实现 MCTS 的。（11）请问对这个仓库提出详细的改进建议")
+    query = (
+        "请回答下面的问题：（1）请简要介绍一下 LightZero。（2）请详细介绍 LightZero 的框架结构。 （3）请给出安装 LightZero，运行他们的示例代码的详细步骤。（4）- 请问 LightZero 具体支持什么任务（tasks/environments）? （5）请问 LightZero 具体支持什么算法?（6）请问 LightZero 具体支持什么算法，各自支持在哪些任务上运行? （7）请问 LightZero 里面实现的 MuZero 算法支持在 Atari 任务上运行吗？（8）请问 LightZero 里面实现的 AlphaZero 算法支持在 Atari 任务上运行吗？（9）LightZero 支持哪些算法? 各自的优缺点是什么? 我应该如何根据任务特点进行选择呢？（10）请结合 LightZero 中的代码介绍他们是如何实现 MCTS 的。（11）请问对这个仓库提出详细的改进建议")
     """
     （1）请简要介绍一下 LightZero。 
     （2）请详细介绍 LightZero 的框架结构。 
