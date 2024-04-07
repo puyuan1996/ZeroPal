@@ -1,11 +1,11 @@
-# RAG Demo
+# ZeroPal
 
-English | [简体中文(Simplified Chinese)](https://github.com/puyuan1996/RAG/blob/main/README_zh.md) 
+English | [简体中文(Simplified Chinese)](https://github.com/puyuan1996/ZeroPal/blob/main/README_zh.md) 
 
 ## Introduction
 
-RAG is a demonstration project for a question-answering system based on Retrieval-Augmented Generation (RAG). 
-- It utilizes large language models such as GPT-3.5 in conjunction with a document retrieval vector database like Weaviate to respond to user queries by retrieving relevant document contexts and leveraging the generative capabilities of the language model.
+ZeroPal is a demonstration project for a question-answering system for [LightZero](https://github.com/opendilab/LightZero) based on Retrieval-Augmented Generation (RAG). Zero represents LightZero, and Pal represents a companion.
+- It utilizes large language models such as Kimi and GPT-4 in conjunction with a document retrieval vector database like Weaviate to respond to user queries by retrieving relevant document contexts and leveraging the generative capabilities of the language model.
 - The project also includes a web-based interactive application built with Gradio and rag_demo.py.
 
 ## rag_demo.py Features
@@ -37,7 +37,7 @@ QUESTION_LANG='cn' # The language of the question, currently available option is
 ```
 
 4. Ensure you have available documents as context or use the commented-out code snippet to download the documents you want to reference.
-5. Run the `python3 -u rag_demo.py` file to start using the application.
+5. Run the `python3 -u app_mqa_database.py` file to test ZeroPal on a local web page.
 
 ## Example
 
@@ -47,18 +47,20 @@ if __name__ == "__main__":
     # Assuming documents are already present locally
     file_path = './documents/LightZero_README_zh.md'
     # Load and split document
-    chunks = load_and_split_document(file_path)
+    chunks = load_and_split_document(file_path, chunk_size=5000, chunk_overlap=500)
     # Create vector store
-    retriever = create_vector_store(chunks)
+    vectorstore = create_vector_store(chunks, model=embedding_model)
+    retriever = get_retriever(vectorstore, k=5)
     # Set up RAG process
-    rag_chain = setup_rag_chain()
+    rag_chain = setup_rag_chain(model_name=model_name, temperature=temperature)
     
     # Pose a question and get an answer
     query = "Does the AlphaZero algorithm implemented in LightZero support running in the Atari environment? Please explain in detail."
     # Use RAG chain to get referenced documents and answer
-    retrieved_documents, result_with_rag = execute_query(retriever, rag_chain, query)
+    retrieved_documents, result_with_rag = execute_query(retriever, rag_chain, query, model_name=model_name,
+                                                         temperature=temperature)
     # Get an answer without using RAG chain
-    result_without_rag = execute_query_no_rag(query=query)
+    result_without_rag = execute_query_no_rag(model_name=model_name, query=query, temperature=temperature)
     
     # Details of data handling code are omitted here, please refer to the source files in this repository for specifics
     
@@ -78,16 +80,18 @@ if __name__ == "__main__":
 RAG/
 │
 ├── rag_demo.py            # RAG demonstration script with support for outputting retrieved document chunks.
-├── app_qa.py              # Web-based interactive application built with Gradio and rag_demo.py.
-├── app_mqa.py             # Web-based interactive application built with Gradio and rag_demo.py. Supports maintaining conversation history.
+├── app_mqa.py              # Web-based interactive application built with Gradio and rag_demo.py.
+├── app_mqa_database.py             # Web-based interactive application built with Gradio and rag_demo.py. Supports maintaining the database of conversation history.
 ├── .env                   # Environment variable configuration file
 └── documents/             # Documents folder
     └── your_document.txt  # Context document
+└── database/              # Database folder
+    └── conversation_history.db  # Database for conversation history
 ```
 
 ## Contribution Guide
 
-If you would like to contribute code to RAG, please follow these steps:
+If you would like to contribute code to ZeroPal, please follow these steps:
 
 1. Fork the project.
 2. Create a new branch.
