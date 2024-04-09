@@ -217,7 +217,8 @@ def execute_query_no_rag(model_name="gpt-4", temperature=0, query=""):
              "content": query},
         ]
         completion = client.chat.completions.create(
-            model="moonshot-v1-128k",
+            # model="moonshot-v1-128k",
+            model="moonshot-v1-32k",
             messages=messages,
             temperature=temperature,
             top_p=1.0,
